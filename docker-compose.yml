@@ -1,23 +1,37 @@
 version: '2'
 
 services:
-  webserver:
-    build: ./docker/webserver
-    image: runwaytest_web
+  web:
+    image: nginx:latest
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
     volumes:
-      - /var/www/html/simple-docker/www:/var/www/html
+      - ./www:/www
+      - ./site.conf:/etc/nginx/conf.d/site.conf
     links:
+      - php
       - db
+      - elasticSearch
+
+  php:
+    image: php:7.3-fpm
+    volumes:
+        - ./www:/www
 
   db:
-    image: mysql:5.7
-    ports: 
-      - "4407:3306"
-    volumes:
-      - ./db:/var/lib/mysql
+    image: mysql:5.6
+
+  elasticSearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.8.6
     environment:
-      - MYSQL_ROOT_PASSWORD=docker
-      - MYSQL_DATABASE=db_runwaytest
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
